@@ -1,0 +1,6 @@
+pom.xml
+target/
+.classpath
+.project
+.settings/
+env.txt
