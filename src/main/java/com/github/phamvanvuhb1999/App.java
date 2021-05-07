@@ -1,6 +1,7 @@
 package com.github.phamvanvuhb1999;
 
 import org.pcap4j.core.PacketListener;
+import org.pcap4j.core.PcapDumper;
 import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNetworkInterface;
 //import org.pcap4j.util.NifSelector;
@@ -12,10 +13,13 @@ import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.packet.Packet;
 import com.iphelper.*;
 import java.awt.EventQueue;
+import java.util.*;
+import java.io.File;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
 import com.controller.Controller;
+import com.gui.*;
 
 /**
  *
@@ -32,14 +36,19 @@ public class App
     static String ipVersion = "...";
     static String protocol = "...";
     static boolean flagChange = false;
-    static ArrayList<IpInfo> listInfoPacket = new ArrayList<IpInfo>();
-    static boolean isRunning = false;
+
+    public static ArrayList<IpInfo> listInfoPacket = new ArrayList<IpInfo>();
+    public static boolean isRunning = false;
+    public static boolean Saved = false;
+    public static boolean offlineMode = false;
+    public static String offlinePath = "";
+
     static int snapshotLength = 65536;
     static int readIimeout = 1000;
     static int maxPackets = 100;
 
     private Provider provider;
-    private Worker worker;
+    public Worker worker;
 
     
     public static List<PcapNetworkInterface> getNetworkDevice() {
@@ -93,10 +102,12 @@ public class App
         return result;
     }
 
-    public void updateFilter(String ipver, String proto) throws Exception{
-        
-        if(flagChange){
-            throw new Exception("Already switching filter.");
+    public synchronized void updateFilter(String ipver, String proto) throws Exception{
+        // if(flagChange){
+        //     throw new Exception("Already switching filter.");
+        // }else 
+        if(!flagChange && proto == protocol && ipver == ipVersion){
+            changeFilter(false);
         }else {
             if(checkValidProtocol(proto)){
                 protocol = proto;
@@ -115,10 +126,10 @@ public class App
 
     private boolean filterIpInfo(IpInfo packetInfo, String ipversion, String protocol){
         boolean version4 = packetInfo.isIpv4Packet();
-        if(version4 && ipversion != "IPv4"){
+        if(version4 && ipversion == "IPv6"){
             return false;
         }
-        if(!version4 && ipversion != "IPv6"){
+        if(!version4 && ipversion == "IPv4"){
             return false;
         }
         if(ipversion == "..." || (version4 && ipversion == "IPv4") || (!version4 && ipversion == "IPv6")){
@@ -184,9 +195,10 @@ public class App
         while(true){
             try{
                 Thread.sleep(1000);
-                System.out.println("State: " + isRunning);
-                if(isRunning){
-                    
+                if(!isRunning){
+                    if(offlineMode){
+                        app.worker.openOffline(App.offlinePath);
+                    }
                 }
             }catch(Exception e){
                 e.printStackTrace();
@@ -200,9 +212,15 @@ public class App
     }
 
 
+    public static void setOffline(String filepath){
+        offlineMode = true;
+        offlinePath = filepath;
+    }
+
+
     public static void defineProtocol(){
-        int[] code = {1,17,6,58};
-        String[] type = {"ICMP","UDP","TCP","Ipv6 ICMP"};
+        int[] code = {1,17,6,58,100};
+        String[] type = {"ICMP","UDP","TCP","Ipv6 ICMP", "ARP IPV4"};
         for(int i = 0 ; i < code.length; i ++){
             protoCode.put(type[i], code[i]);
             protoString.put(code[i], type[i]);
@@ -211,15 +229,20 @@ public class App
 
     private boolean checkValidProtocol(String protocol){
         try{
-            int code = protoCode.get(protocol);
+            int code = -1;
+            Object temp =  protoCode.get(protocol);
+            if(temp != null){
+                code = (int)temp;
+            }
             if(code >= 0){
                 return true;
+            }else {
+                return false;
             }
         }catch(Exception e){
             e.printStackTrace();
             return false;
         }
-        return true;
     }
 
     private boolean checkValidIpversion(String Ipversion){
@@ -234,6 +257,13 @@ public class App
         }
     }
 
+    public void closeDumper(){
+        try{
+            this.worker.dumper.close();
+        }catch(Exception e){
+            e.printStackTrace();
+        }
+    }
 
     class Provider extends Thread{
         @Override
@@ -246,7 +276,7 @@ public class App
                 }catch(Exception e){
                     e.printStackTrace();
                 }
-                if(flagChange && isRunning){
+                if(flagChange){
                     changeFilter(false);
                     ArrayList<IpInfo> result = getInfoListWithFilter();
                     gui.updateTabel(result);
@@ -258,9 +288,11 @@ public class App
     class Worker extends Thread{
         PcapNetworkInterface networkInt;
         boolean legal = true;
-        public boolean inited = false;
         PacketListener listener;
         PcapHandle handle;
+
+        public boolean inited = false;
+        public PcapDumper dumper;
         public Worker(){}
 
         private void init(){
@@ -269,16 +301,25 @@ public class App
                 if(this.networkInt == null){
                     return;
                 }
-                this.inited = true;
+                this.inited = true; 
                 handle = networkInt.openLive(snapshotLength, PromiscuousMode.PROMISCUOUS, readIimeout);
+                dumper = null;
+                dumper = handle.dumpOpen("src/main/java/com/dump/"+getRandomFilename());
                 listener = new PacketListener(){
                     @Override
                     public void gotPacket(Packet packet){
                         byte[] rawData = packet.getRawData();
                         try{
-                            IpInfo info = new IpInfo(new IpHelper(rawData), handle.getTimestamp().toString());
-                            addListIpInfo(info);
-                            gui.updateTabel(info);
+                            dumper.dump(packet, handle.getTimestamp());
+                            if(rawData.length > 0){//filter ARP packet/ handle later.
+                                IpInfo info = new IpInfo(new IpHelper(rawData), handle.getTimestamp().toString());
+                                if(info.helper.getIpVersion() > 0){
+                                    addListIpInfo(info);
+                                    if(filterIpInfo(info, ipVersion, protocol)){
+                                        gui.updateTabel(info);
+                                    }
+                                }
+                            }
                         }catch(Exception e){
                             e.printStackTrace(); 
                         }  
@@ -289,6 +330,18 @@ public class App
                 e.printStackTrace();
             }
         }
+
+        public void openOffline(String filename){
+            try{
+                this.handle = Pcaps.openOffline(filename);
+                while(true){
+                    handle.getNextPacket();
+                }
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+        }
+
         @Override
         public void run() {
             super.run();
@@ -297,20 +350,34 @@ public class App
                 while(true){
                     Thread.sleep(100);
                     if(!this.inited && isRunning){
-                        System.out.println("Inited: " + this.inited + "  IsRunning: " + isRunning + " INIT.");
                         this.init();
                     }
                     else if(this.inited && isRunning){
-                        System.out.println("Inited: " + this.inited + "  IsRunning: " + isRunning + " LOOP.");
                         handle.loop(maxPackets, listener);
                     }else {
-                        System.out.println("Inited: " + this.inited + "  IsRunning: " + isRunning + " STOP.");
                     }
                 }
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
+    }
+
+
+    public static void ClearPackets(){
+        App.listInfoPacket = new ArrayList<IpInfo>();
+    }
+
+
+    public static void setSaved(boolean flag){
+        App.Saved = flag;
+    }
+
+    public static String getRandomFilename(){
+        String filename = new Date().toString() + ".pcap";
+        filename = filename.replaceAll(" ", "_");
+        filename = filename.replaceAll(":", ".");
+        return filename;
     }
 }
 

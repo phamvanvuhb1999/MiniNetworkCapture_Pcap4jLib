@@ -41,6 +41,9 @@ public class IpInfo {
 
     public String getProtocol(){
         if(getVersion() == 4){
+            if(this.helper.isArpPacket()){
+                return App.protoString.get(this.helper.arpHelper.getProtocolCode());
+            }
             return App.protoString.get(this.helper.ipv4Helper.getProtocolCode());
         }else {
             return App.protoString.get(this.helper.ipv6Helper.getProtocolCode());
@@ -59,8 +62,13 @@ public class IpInfo {
         result += "\tSource MAC: " + this.getSourceAddress() + "\n";
         
         if(this.version == 4){
-            result += "Internet Protocol Version 4: \n";
-            result += this.helper.ipv4Helper.toString();
+            if(this.helper.isArpPacket()){
+                result += "Internet Protocol Version 4: \n";
+                result += this.helper.arpHelper.toString();
+            }else {
+                result += "Internet Protocol Version 4: \n";
+                result += this.helper.ipv4Helper.toString();
+            }
         }else if(this.version == 6){
             result += "Internet Protocol Version 6: \n";
             result += this.helper.ipv6Helper.toString();

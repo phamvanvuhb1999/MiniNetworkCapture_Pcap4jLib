@@ -22,7 +22,7 @@ public class Ipv6Helper {
 
     public Ipv6Helper(byte[] rawData){
         this.data = new byte[rawData.length];
-        this.data = rawData;
+        System.arraycopy(rawData, 0, this.data, 0, rawData.length);
         int protocol = this.getProtocol();
         this.protocolCode = protocol;
         if(protocol == 6){
@@ -72,8 +72,9 @@ public class Ipv6Helper {
 
     public String getIpv6AddressFromHex(int offset){
         int bytelength = 16;
+        //log("Offset: " + offset + " Length: " + this.data.length);
         if(offset + bytelength > this.data.length){
-            throw new IndexOutOfBoundsException("In getipv4AddressFromHex");
+            throw new IndexOutOfBoundsException("In getipv6AddressFromHex");
         }
         byte[] byt = new byte[bytelength];
         System.arraycopy(this.data, offset , byt, 0, bytelength);
@@ -177,7 +178,7 @@ public class Ipv6Helper {
                     case 17:
                         result += this.udpHelper.toString();
                         break;
-                    case 1:
+                    case 58:
                         result += this.icmpHelper.toString();
                         break;
                     default:
@@ -201,7 +202,7 @@ public class Ipv6Helper {
             case 17:
                 return "UDP";
             default:
-                return "Undefined";
+                return "ARP";
         }
     }
 

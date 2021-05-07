@@ -146,7 +146,7 @@ public class Ipv4Helper {
         result += "\tProtocol: " + this.getProtocol() + "\n";
         result += "\tHeader Checksum: " + this.getCheckSum() +"\n";
         result += "\tSource Address: " + this.getIpv4SourceAddress() + "\n";
-        result += "\tDestination Address: " + this.getIpv4SourceAddress() + "\n";
+        result += "\tDestination Address: " + this.getIpv4DestinationAddress() + "\n";
 
         switch(this.getProtocol()){
             case 6:

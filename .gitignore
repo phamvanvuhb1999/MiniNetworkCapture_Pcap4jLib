@@ -4,3 +4,5 @@ target/
 .project
 .settings/
 env.txt
+src/main/java/com/dump/
+src/main/java/com/log/

@@ -1,4 +1,4 @@
-package com.github.phamvanvuhb1999;
+package com.gui;
 
 import java.awt.BorderLayout;
 import java.awt.EventQueue;
@@ -29,6 +29,8 @@ import javax.swing.event.ListSelectionListener;
 
 import com.iphelper.IpInfo;
 
+import org.pcap4j.packet.Packet;
+
 import javax.swing.SwingConstants;
 import javax.swing.ImageIcon;
 import java.awt.Font;
@@ -42,11 +44,15 @@ public class GUI extends JFrame {
 	public JButton run_btn;
 	public JButton save_btn;
 	public JButton filter_btn;
+	public JButton open_btn;
 	public JComboBox ProtocolTypeC;
 	public JComboBox IpversionC;
 	public JTextArea info;
 	public static JComboBox networkInterface;
 	private ArrayList<IpInfo> currentFill = new ArrayList<IpInfo>();
+	private JLabel packets;
+	private JLabel displayed;
+	private JLabel dropped;
 
 
 
@@ -54,16 +60,19 @@ public class GUI extends JFrame {
 	 * Launch the application.
 	 */
 	public static void main(String[] args) {
-		EventQueue.invokeLater(new Runnable() {
-			public void run() {
-				try {
-					GUI frame = new GUI();
-					frame.setVisible(true);
-				} catch (Exception e) {
-					e.printStackTrace();
-				}
-			}
-		});
+
+		File file = new File("src/main/java/com/dump/dump.txt");
+		System.out.println(file.exists());
+		// EventQueue.invokeLater(new Runnable() {
+		// 	public void run() {
+		// 		try {
+		// 			GUI frame = new GUI();
+		// 			frame.setVisible(true);
+		// 		} catch (Exception e) {
+		// 			e.printStackTrace();
+		// 		}
+		// 	}
+		// });
 	}
 
 	/**
@@ -75,13 +84,13 @@ public class GUI extends JFrame {
       		Scanner myReader = new Scanner(myObj);
 			if(myReader.hasNextLine()){
 				this.path = myReader.nextLine();
-				System.out.println(this.path);
 			}
 		}catch(Exception e){
 			e.printStackTrace();
 		}
+		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 984, 568);
+		setBounds(100, 100, 984, 578);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -90,14 +99,19 @@ public class GUI extends JFrame {
 		run_btn = new JButton("");
 		//ImageIcon imageIcon = new ImageIcon("playIcon.jpg");
 		//run_btn.setIcon(imageIcon);
-		run_btn.setBounds(23, 11, 45, 25);
-		run_btn.setIcon(new ImageIcon(new ImageIcon(path + "playIcon.jpg").getImage().getScaledInstance(45, 25, Image.SCALE_DEFAULT)));
+		run_btn.setBounds(23, 11, 35, 25);
+		run_btn.setIcon(new ImageIcon(new ImageIcon(path + "playIcon.jpg").getImage().getScaledInstance(35, 25, Image.SCALE_DEFAULT)));
 		contentPane.add(run_btn);
 		
 		save_btn = new JButton("");
-		save_btn.setBounds(93, 11, 45, 25);
-		save_btn.setIcon(new ImageIcon(new ImageIcon(path + "Icon.png").getImage().getScaledInstance(45, 25, Image.SCALE_DEFAULT)));
+		save_btn.setBounds(70, 11, 35, 25);
+		save_btn.setIcon(new ImageIcon(new ImageIcon(path + "Icon.png").getImage().getScaledInstance(35, 25, Image.SCALE_DEFAULT)));
 		contentPane.add(save_btn);
+
+		open_btn = new JButton("");
+		open_btn.setBounds(118, 11, 35, 25);
+		open_btn.setIcon(new ImageIcon(new ImageIcon(path + "open.png").getImage().getScaledInstance(35, 25, Image.SCALE_DEFAULT)));
+		contentPane.add(open_btn);
 		
 		JScrollPane scrollPane = new JScrollPane();
 		scrollPane.setBounds(10, 50, 663, 470);
@@ -153,8 +167,8 @@ public class GUI extends JFrame {
 		contentPane.add(lblMiniNetworkCapture);
 		
 		filter_btn = new JButton("");
-		filter_btn.setBounds(459, 14, 40, 25);
-		filter_btn.setIcon(new ImageIcon(new ImageIcon(path + "filter.png").getImage().getScaledInstance(40, 23, Image.SCALE_DEFAULT)));
+		filter_btn.setBounds(459, 14, 30, 25);
+		filter_btn.setIcon(new ImageIcon(new ImageIcon(path + "filter.png").getImage().getScaledInstance(30, 25, Image.SCALE_DEFAULT)));
 		contentPane.add(filter_btn);
 
 		networkInterface = new JComboBox();
@@ -163,38 +177,89 @@ public class GUI extends JFrame {
 
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 			public void valueChanged(ListSelectionEvent event) {
-				System.out.println(table.getValueAt(table.getSelectedRow(), 0).toString());
 				int rowIndex = Integer.parseInt(table.getValueAt(table.getSelectedRow(), 0).toString());
+				if(rowIndex < 0){
+					return;
+				}
 				String string = currentFill.get(rowIndex + 1).toString();
 				info.setText(string);
 			}
 		});
+
+		packets = new JLabel("packets");
+		packets.setBounds(215, 523, 100, 14);
+		contentPane.add(packets);
+		
+		displayed = new JLabel("displayed");
+		displayed.setBounds(423, 523, 100, 14);
+		contentPane.add(displayed);
+		
+		dropped = new JLabel("dropped");
+		dropped.setBounds(624, 523, 100, 14);
+		contentPane.add(dropped);
 	}
 
 	public synchronized void updateTabel(IpInfo newpac){
 		currentFill.add(newpac);
 		DefaultTableModel model = (DefaultTableModel) table.getModel();
-		model.addRow(InInfoToListObject(newpac, model.getRowCount()));
+		model.addRow(IpInfoToListObject(newpac, model.getRowCount()));
 	}
 
-	public Object[] InInfoToListObject(IpInfo newpac, int currentIndex){
+	public void updateCountInfo(int packets, float displayed, float drop){
+		this.packets.setText("Packets: " + packets);
+		this.displayed.setText("Displayed: " + (int)(packets * displayed) + " (" + displayed +")");
+		this.dropped.setText("Dropped: " + drop);
+	}
+
+	public Object[] IpInfoToListObject(IpInfo newpac, int currentIndex){
 		Object[] result = new Object[7];
 		result[0] = currentIndex + 1;
 		result[1] = newpac.getTimestamp();
-		result[2] = newpac.getSourceAddress();
-		result[3] = newpac.getDesAddress();
+		result[2] = newpac.helper.getIpSourceAddress();
+		result[3] = newpac.helper.getIpDestinationAddress();
 		result[4] = newpac.getProtocol();
 		result[5] = newpac.getPacketLength();
 		result[6] = "info";
 		return result;
 	}
 
+	public Object[][] ListIpInfoToObject(ArrayList<IpInfo> newdata){
+		currentFill = newdata;
+		Object[][] result = new Object[newdata.size()][7];
+		for(int i = 0; i < newdata.size(); i ++){
+			result[i] = IpInfoToListObject(newdata.get(i), i);
+		}
+		return result;
+	}
+
 	public void updateTabel(ArrayList<IpInfo> result){
+		table.setRowSelectionAllowed(false);
 		if(result.size() == 1){
+			defaultTable();
 			updateTabel(result.get(0));
 		}else if(result.size() > 1){
-
+			table.setRowSelectionAllowed(false);
+			table.setModel(new DefaultTableModel(
+				ListIpInfoToObject(result),
+				new String[] {
+					"No.", "Time", "Source Address", "Destination Address", "Protocol", "Length", "Infor"
+				}
+			));
+			table.setRowSelectionAllowed(true);
 		}
+		if(result.size() > 0){
+			table.setRowSelectionAllowed(true);
+		}
+	}
+
+	private void defaultTable(){
+		table.setModel(new DefaultTableModel(
+			new Object[][] {
+			},
+			new String[] {
+				"No.", "Time", "Source Address", "Destination Address", "Protocol", "Length", "Infor"
+			}
+		));
 	}
 
 	public void setInterfaceCombobox(ArrayList<String> list){
