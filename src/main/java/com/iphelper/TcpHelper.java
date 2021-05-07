@@ -16,6 +16,41 @@ public class TcpHelper extends ProtocolHelper{
         super(data, offset);
     }
 
+    public int getSegmentLength(){
+        return this.data.length - 20;
+    }
+
+    public String getHttpInfo(boolean isIpv4Packet){
+        int offset = 20;
+        if(!isIpv4Packet){
+            offset = 40;
+        }
+        String result = "";
+        for(int i = offset; i < this.data.length - offset; i ++){
+            if(this.data[i] != 0x0d || this.data[i + 1] != 0x0a){
+                int temp = this.data[i] & 0xff;
+                if(temp >= 40 && temp < 177){
+                    result += Character.toString((char)temp);
+                }else {
+                    result += ".";
+                }
+            }else {
+                break;
+            }
+        }
+        return result;
+    }
+
+    public String getTcpInfo(){
+        String result = "";
+        result += getSourcePort() + " -> " + getDestinationPort();
+        if(getFlags() == "0x0010"){
+            result += " ACK(1) ";
+        }
+        result += " Len=" + getSegmentLength() + " Win=" +getWindowSize(); 
+        return result;
+    }
+
     public int getSourcePort(){
         return getIntFromByteArray(0, bsourcePortLength);
     }
@@ -66,7 +101,7 @@ public class TcpHelper extends ProtocolHelper{
         String result = "";
         result += "\tSource Port: " + this.getSourcePort()+"\n";
         result += "\tDestination Port : " + this.getDestinationPort() + "\n";
-        result += "\tTCP Segment Len: " + "\n";
+        result += "\tTCP Segment Len: " + this.getSegmentLength() + "\n";
         result += "\tSequence Numer: " + this.getSequenceNumber() + "\n";
         result += "\tAcknowledment Number: " + this.getAcknowledgmentNumber() + "\n";
         result += "\tFlag: " + this.getFlags() + "\n";
@@ -78,5 +113,7 @@ public class TcpHelper extends ProtocolHelper{
         result += "\t" + this.getReadableFromBytesData(this.getPayloadData()) + "\n";
         return result;
     }
+
+
 }
  

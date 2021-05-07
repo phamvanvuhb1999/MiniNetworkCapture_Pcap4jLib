@@ -49,6 +49,31 @@ public class IcmpHelper extends ProtocolHelper{
         return result;
     }
 
+    public String getIcmpInfo(){
+        String result = "";
+        switch(getType()){
+            case 8:
+                result += "Echo (ping) Request";
+                break;
+            case 0:
+                result += "Echo (ping) Repl";
+                break;
+            case 3:
+                result += "Destination Unreachable";
+                switch(getCode()){
+                    case 3:
+                        result += " (Post Unreachable) ";
+                        break;
+                    default:
+                        break;
+                }
+                break;
+            default:
+                break;
+        }
+        return result;
+    }
+
     public byte[] getPayloadData(){
         byte[] result = new byte[this.data.length - 12];
         System.arraycopy(this.data, 12, result, 0, result.length);

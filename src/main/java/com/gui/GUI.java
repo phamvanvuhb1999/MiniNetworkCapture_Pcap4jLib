@@ -125,13 +125,13 @@ public class GUI extends JFrame {
 				"No.", "Time", "Source Address", "Destination Address", "Protocol", "Length", "Infor"
 			}
 		));
-		table.getColumnModel().getColumn(0).setPreferredWidth(51);
+		table.getColumnModel().getColumn(0).setPreferredWidth(31);
 		table.getColumnModel().getColumn(1).setPreferredWidth(85);
 		table.getColumnModel().getColumn(2).setPreferredWidth(152);
 		table.getColumnModel().getColumn(3).setPreferredWidth(153);
 		table.getColumnModel().getColumn(4).setPreferredWidth(60);
 		table.getColumnModel().getColumn(5).setPreferredWidth(49);
-		table.getColumnModel().getColumn(6).setPreferredWidth(201);
+		table.getColumnModel().getColumn(6).setPreferredWidth(221);
 		scrollPane.setViewportView(table);
 		
 		IpversionC = new JComboBox();
@@ -239,6 +239,7 @@ public class GUI extends JFrame {
 		if(result.size() == 0){
 			defaultTable();
 		}else if(result.size() > 1){
+			defaultTable();
 			table.setModel(new DefaultTableModel(
 				ListIpInfoToObject(result),
 				new String[] {

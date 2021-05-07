@@ -137,6 +137,16 @@ public class ArpHelper{
         return 100;
     }
 
+    public String getArpInfo(){
+        String result = "";
+        if(getOpCode() == "Request (1)"){
+            result += "Who has " + getTargetIp() + " tell " + getSenderIp(0) +" ?";
+        }else {
+            result += getSenderIp(0) + " is at " + getSenderMac(0);
+        }
+        return result;
+    }
+
     public String toString(){
         String result = "";
         result += "\tHardware type: " + this.getHardwareType() + "\n";

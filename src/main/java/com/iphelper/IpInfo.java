@@ -1,6 +1,11 @@
 package com.iphelper;
 
+import javax.sound.sampled.Port;
+import javax.swing.text.AbstractDocument.LeafElement;
+
 import com.github.phamvanvuhb1999.App;
+
+import org.pcap4j.packet.namednumber.IpVersion;
 
 public class IpInfo {
     private
@@ -55,7 +60,87 @@ public class IpInfo {
     }
 
     public String getInfo(){
+        try{
+            if(this.helper.isTcpPacket()){
+                boolean isIpv4 = isIpv4Packet();
+                int[] Ports;
+                if(isIpv4){
+                    Ports = getPort(isIpv4, this.helper.ipv4Helper.tcpHelper,true);
+                }else {
+                    Ports = getPort(false, this.helper.ipv6Helper.tcpHelper, true);
+                }
+                if(Ports[0] == 80 || Ports[1] == 80){
+                    if(isIpv4 && this.helper.ipv4Helper != null){
+                        return this.helper.ipv4Helper.tcpHelper.getHttpInfo(true);
+                    }else if(!isIpv4 && this.helper.ipv6Helper != null){
+                        return this.helper.ipv6Helper.tcpHelper.getHttpInfo(false);
+                    }
+                }else {
+                    if(isIpv4 && this.helper.ipv4Helper != null){
+                        return this.helper.ipv4Helper.tcpHelper.getTcpInfo();
+                    }else {
+                        return this.helper.ipv6Helper.tcpHelper.getTcpInfo();
+                    }
+                }
+            }else if(this.helper.isIcmpPacket()){
+                boolean isIpv4 = isIpv4Packet();
+                if(isIpv4){
+                    return this.helper.ipv4Helper.icmpHelper.getIcmpInfo();
+                }else {
+                    return this.helper.ipv6Helper.icmpHelper.getIcmpInfo();
+                }
+            }else if(this.helper.isUdpPacket()){
+                boolean isIpv4 = isIpv4Packet();
+                if(isIpv4){
+                    int[] Ports = getPort(isIpv4Packet(), this.helper.ipv4Helper.udpHelper, false);
+                    String temp = "";
+                    if(Ports[0] == 137 && Ports[1] == 137){
+                        temp += " NBNS ";
+                    }
+                    temp += "Length: " + getPacketLength();
+                    return temp;
+                }else {
+                    int[] Ports = getPort(isIpv4Packet(), this.helper.ipv6Helper.udpHelper, false);
+                    String temp = "";
+                    if(Ports[0] == 137 && Ports[1] == 137){
+                        temp += " NBNS ";
+                    }
+                    temp += "Length: " + getPacketLength();
+                    return temp;
+                }
+            }else if(this.helper.isArpPacket()){
+                return this.helper.arpHelper.getArpInfo();
+            }
+        }catch(Exception e){
+            e.printStackTrace();
+        }
         return "info";
+    }
+
+    public int[] getPort(boolean isVersion4, ProtocolHelper helper, boolean istcp){
+        UdpHelper udpHelper1;
+        TcpHelper tcpHelper1;
+        int[] result = new int[2];
+        if(istcp){
+            tcpHelper1 = (TcpHelper)helper;
+            if(isVersion4){
+                result[0] = tcpHelper1.getSourcePort();
+                result[1] = tcpHelper1.getDestinationPort();
+            }else {
+                result[0] = tcpHelper1.getSourcePort();
+                result[1] = tcpHelper1.getDestinationPort();
+            }  
+        }else {
+            udpHelper1 = (UdpHelper)helper;
+            if(isVersion4){
+                result[0] = udpHelper1.getSourcePort();
+                result[1] = udpHelper1.getDestinationPort();
+            }else {
+                result[0] = udpHelper1.getSourcePort();
+                result[1] = udpHelper1.getDestinationPort();
+            }  
+        }
+        return result;
     }
 
     public String toString(){
