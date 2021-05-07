@@ -54,6 +54,10 @@ public class IpInfo {
         return this.helper.getPacketLength();
     }
 
+    public String getInfo(){
+        return "info";
+    }
+
     public String toString(){
         String result = "\n";
         result += "Time: " + this.timestamp + "\n";

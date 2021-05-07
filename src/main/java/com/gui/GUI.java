@@ -177,7 +177,9 @@ public class GUI extends JFrame {
 
 		table.getSelectionModel().addListSelectionListener(new ListSelectionListener(){
 			public void valueChanged(ListSelectionEvent event) {
-				int rowIndex = Integer.parseInt(table.getValueAt(table.getSelectedRow(), 0).toString());
+				int selectRow = table.getSelectedRow();
+				selectRow = selectRow > 0 ? selectRow : 0;
+				int rowIndex = Integer.parseInt(table.getValueAt(selectRow, 0).toString());
 				if(rowIndex < 0){
 					return;
 				}
@@ -219,7 +221,7 @@ public class GUI extends JFrame {
 		result[3] = newpac.helper.getIpDestinationAddress();
 		result[4] = newpac.getProtocol();
 		result[5] = newpac.getPacketLength();
-		result[6] = "info";
+		result[6] = newpac.getInfo();
 		return result;
 	}
 
@@ -233,22 +235,16 @@ public class GUI extends JFrame {
 	}
 
 	public void updateTabel(ArrayList<IpInfo> result){
-		table.setRowSelectionAllowed(false);
-		if(result.size() == 1){
+		table.clearSelection();
+		if(result.size() == 0){
 			defaultTable();
-			updateTabel(result.get(0));
 		}else if(result.size() > 1){
-			table.setRowSelectionAllowed(false);
 			table.setModel(new DefaultTableModel(
 				ListIpInfoToObject(result),
 				new String[] {
 					"No.", "Time", "Source Address", "Destination Address", "Protocol", "Length", "Infor"
 				}
 			));
-			table.setRowSelectionAllowed(true);
-		}
-		if(result.size() > 0){
-			table.setRowSelectionAllowed(true);
 		}
 	}
 

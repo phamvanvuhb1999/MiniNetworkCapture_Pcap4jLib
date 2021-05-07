@@ -117,6 +117,7 @@ public class Controller {
             public void actionPerformed(ActionEvent e){
                 String ipver = ip_version.getSelectedItem().toString();
                 String proto = proto_type.getSelectedItem().toString();
+                System.out.println("\nFilter: " + ipver + " " + proto);
                 try{
                     app.updateFilter(ipver, proto);
                 }catch(Exception e1){

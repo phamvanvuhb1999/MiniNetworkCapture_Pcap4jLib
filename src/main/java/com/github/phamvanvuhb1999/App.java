@@ -6,15 +6,20 @@ import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNetworkInterface;
 //import org.pcap4j.util.NifSelector;
 import java.io.IOException;
+import java.time.temporal.ValueRange;
 import java.util.List;
+
+import javax.lang.model.element.Element;
+
 import org.pcap4j.core.Pcaps;
 //import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.packet.Packet;
+import org.pcap4j.packet.namednumber.IpVersion;
+
 import com.iphelper.*;
 import java.awt.EventQueue;
 import java.util.*;
-import java.io.File;
 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -45,7 +50,7 @@ public class App
 
     static int snapshotLength = 65536;
     static int readIimeout = 1000;
-    static int maxPackets = 100;
+    static int maxPackets = 10;
 
     private Provider provider;
     public Worker worker;
@@ -87,11 +92,12 @@ public class App
 
     public ArrayList<IpInfo> getInfoListWithFilter(){
         ArrayList<IpInfo> result = new ArrayList<IpInfo>();
+        System.out.println("List IpInfo.size: " + listInfoPacket.size());
         if(listInfoPacket.size() > 0){
             try{
                 for(int i = 0 ; i < listInfoPacket.size(); i ++){
                     IpInfo temp = listInfoPacket.get(i);
-                    if(filterIpInfo(temp, ipVersion, protocol)){
+                    if(filterIpInfo(temp)){
                         result.add(temp);
                     }
                 }
@@ -103,16 +109,15 @@ public class App
     }
 
     public synchronized void updateFilter(String ipver, String proto) throws Exception{
-        // if(flagChange){
-        //     throw new Exception("Already switching filter.");
-        // }else 
-        if(!flagChange && proto == protocol && ipver == ipVersion){
+        if(flagChange){
+            throw new Exception("Already switching filter.");
+        }else if(proto == protocol && ipver == ipVersion){
             changeFilter(false);
         }else {
-            if(checkValidProtocol(proto)){
+            if(checkValidProtocol(proto) || proto == "..."){
                 protocol = proto;
             }
-            if(checkValidIpversion(ipver)){
+            if(checkValidIpversion(ipver) || ipver == "..."){
                 ipVersion = ipver;
             }
             changeFilter(true);
@@ -124,33 +129,41 @@ public class App
         flagChange = flag;
     }
 
-    private boolean filterIpInfo(IpInfo packetInfo, String ipversion, String protocol){
-        boolean version4 = packetInfo.isIpv4Packet();
-        if(version4 && ipversion == "IPv6"){
-            return false;
-        }
-        if(!version4 && ipversion == "IPv4"){
-            return false;
-        }
-        if(ipversion == "..." || (version4 && ipversion == "IPv4") || (!version4 && ipversion == "IPv6")){
+    private boolean filterIpInfo(IpInfo packetInfo){
+        boolean ipcheck = false;
+        boolean ver4 = packetInfo.isIpv4Packet();
+        if(ipVersion == "..."){
             if(protocol == "..."){
                 return true;
+            }else {
+                ipcheck = true;
+                if(ipcheck){
+                    return checkProtocol(packetInfo);
+                }else{
+                    return false;
+                }
             }
-            boolean isTcp = packetInfo.helper.isIcmpPacket();
-            if(isTcp && (protocol != "TCP")){
-                return false;
+        }else {
+            if((ver4 && ipVersion == "IPv4") || (!ver4 && ipVersion == "IPv6")){
+                ipcheck = true;
             }
-            boolean isUdp = packetInfo.helper.isUdpPacket();
-            if(isUdp && protocol != "UDP"){
-                return false;
-            }
-            boolean isIcmp = packetInfo.helper.isIcmpPacket();
-            if(isIcmp && protocol != "ICMP"){
+            if(ipcheck){
+                return checkProtocol(packetInfo);
+            }else{
                 return false;
             }
         }
+    }
 
-        return true;
+    public boolean checkProtocol(IpInfo packetInfo){
+        if(protocol == "..." 
+            || (protocol == "TCP" && packetInfo.helper.isTcpPacket()) 
+            || (protocol == "UDP" && packetInfo.helper.isUdpPacket()) 
+            || (protocol == "ICMP" && packetInfo.helper.isIcmpPacket())){
+            return true;
+        }else {
+            return false;
+        }
     }
 
     public void Stop(){
@@ -277,9 +290,10 @@ public class App
                     e.printStackTrace();
                 }
                 if(flagChange){
-                    changeFilter(false);
                     ArrayList<IpInfo> result = getInfoListWithFilter();
+                    System.out.print("Result size: " + result.size());
                     gui.updateTabel(result);
+                    changeFilter(false);
                 }
             }
         }
@@ -315,7 +329,7 @@ public class App
                                 IpInfo info = new IpInfo(new IpHelper(rawData), handle.getTimestamp().toString());
                                 if(info.helper.getIpVersion() > 0){
                                     addListIpInfo(info);
-                                    if(filterIpInfo(info, ipVersion, protocol)){
+                                    if(filterIpInfo(info)){
                                         gui.updateTabel(info);
                                     }
                                 }

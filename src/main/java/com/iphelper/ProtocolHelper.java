@@ -15,10 +15,9 @@ public class ProtocolHelper {
             }else {
                 byte[] temp = new byte[length];
                 System.arraycopy(this.data, offset, temp, 0, length);
-                int count = 1;
                 int sum = 0;
                 for(int i = length - 1; i >= 0; i --){
-                    sum += (temp[i] & 0xFF)*Math.pow(2, 8*count);
+                    sum += (temp[i] & 0xFF)*Math.pow(2, 8*i);
                 }
                 return sum;
             }

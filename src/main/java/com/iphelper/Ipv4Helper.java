@@ -155,7 +155,9 @@ public class Ipv4Helper {
             case 17:
                 result += this.udpHelper.toString();
             case 1:
-                result += this.icmpHelper.toString();
+                if(this.icmpHelper != null){
+                    result += this.icmpHelper.toString();
+                }
             default:
                 break;
         }

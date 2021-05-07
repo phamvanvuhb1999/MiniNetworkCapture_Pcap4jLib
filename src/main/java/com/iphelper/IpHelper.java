@@ -15,7 +15,7 @@ public class IpHelper {
         this.data = new byte[rawData.length];
         this.data = rawData;
         int ipversion = this.getIpVersion();
-        System.out.println("Ipversion: " + ipversion);
+        //System.out.println("Ipversion: " + ipversion);
         if(ipversion == 4){
             if(isArpPacket()){
                 arpHelper = new ArpHelper(this.data);
@@ -28,7 +28,7 @@ public class IpHelper {
     }
 
     public int getPacketLength(){
-        return this.data.length - 8;
+        return this.data.length; //-8
     }
 
     public boolean isIcmpPacket(){
