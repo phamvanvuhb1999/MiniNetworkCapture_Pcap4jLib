@@ -82,8 +82,8 @@ public class ProtocolHelper {
     public String getReadableFromBytesData(byte[] data){
         String result = "";
         for(int i = 0; i < data.length; i ++){
-            int temp = (data[i] & 0xff);
-            if(temp >= 0 && temp <= 255){
+            int temp = (int)(data[i] & 0xff);
+            if(temp > 32 && temp < 127){
                 result += Character.toString((char)temp) + " ";
             }else {
                 result += ".";

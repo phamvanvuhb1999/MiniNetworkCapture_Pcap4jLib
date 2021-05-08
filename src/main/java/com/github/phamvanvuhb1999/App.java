@@ -6,16 +6,16 @@ import org.pcap4j.core.PcapHandle;
 import org.pcap4j.core.PcapNetworkInterface;
 //import org.pcap4j.util.NifSelector;
 import java.io.IOException;
-import java.time.temporal.ValueRange;
+//import java.time.temporal.ValueRange;
 import java.util.List;
 
-import javax.lang.model.element.Element;
+//import javax.lang.model.element.Element;
 
 import org.pcap4j.core.Pcaps;
 //import org.pcap4j.core.BpfProgram.BpfCompileMode;
 import org.pcap4j.core.PcapNetworkInterface.PromiscuousMode;
 import org.pcap4j.packet.Packet;
-import org.pcap4j.packet.namednumber.IpVersion;
+//import org.pcap4j.packet.namednumber.IpVersion;
 
 import com.iphelper.*;
 import java.awt.EventQueue;
@@ -95,10 +95,14 @@ public class App
         System.out.println("List IpInfo.size: " + listInfoPacket.size());
         if(listInfoPacket.size() > 0){
             try{
-                for(int i = 0 ; i < listInfoPacket.size(); i ++){
-                    IpInfo temp = listInfoPacket.get(i);
-                    if(filterIpInfo(temp)){
-                        result.add(temp);
+                if(protocol == "..." && ipVersion == "..."){
+                    result = listInfoPacket;
+                }else {
+                    for(int i = 0 ; i < listInfoPacket.size(); i ++){
+                        IpInfo temp = listInfoPacket.get(i);
+                        if(filterIpInfo(temp)){
+                            result.add(temp);
+                        }
                     }
                 }
             }catch(Exception e){

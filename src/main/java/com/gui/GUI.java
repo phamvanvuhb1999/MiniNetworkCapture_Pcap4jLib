@@ -61,18 +61,18 @@ public class GUI extends JFrame {
 	 */
 	public static void main(String[] args) {
 
-		File file = new File("src/main/java/com/dump/dump.txt");
-		System.out.println(file.exists());
-		// EventQueue.invokeLater(new Runnable() {
-		// 	public void run() {
-		// 		try {
-		// 			GUI frame = new GUI();
-		// 			frame.setVisible(true);
-		// 		} catch (Exception e) {
-		// 			e.printStackTrace();
-		// 		}
-		// 	}
-		// });
+		// File file = new File("src/main/java/com/dump/dump.txt");
+		// System.out.println(file.exists());
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				try {
+					GUI frame = new GUI();
+					frame.setVisible(true);
+				} catch (Exception e) {
+					e.printStackTrace();
+				}
+			}
+		});
 	}
 
 	/**
@@ -90,7 +90,7 @@ public class GUI extends JFrame {
 		}
 		setResizable(false);
 		setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		setBounds(100, 100, 984, 578);
+		setBounds(100, 100, 1100, 578);
 		contentPane = new JPanel();
 		contentPane.setBorder(new EmptyBorder(5, 5, 5, 5));
 		setContentPane(contentPane);
@@ -153,7 +153,7 @@ public class GUI extends JFrame {
 		contentPane.add(lblNewLabel_1);
 		
 		JScrollPane scrollPane_1 = new JScrollPane();
-		scrollPane_1.setBounds(673, 48, 297, 472);
+		scrollPane_1.setBounds(673, 48, 410, 472);
 		contentPane.add(scrollPane_1);
 		
 		info = new JTextArea();
@@ -163,7 +163,7 @@ public class GUI extends JFrame {
 		JLabel lblMiniNetworkCapture = new JLabel("Mini Network Capture Tool");
 		lblMiniNetworkCapture.setFont(new Font("Tahoma", Font.BOLD, 18));
 		lblMiniNetworkCapture.setHorizontalAlignment(SwingConstants.CENTER);
-		lblMiniNetworkCapture.setBounds(683, 0, 277, 47);
+		lblMiniNetworkCapture.setBounds(683, 0, 393, 47);
 		contentPane.add(lblMiniNetworkCapture);
 		
 		filter_btn = new JButton("");

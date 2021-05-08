@@ -29,7 +29,7 @@ public class TcpHelper extends ProtocolHelper{
         for(int i = offset; i < this.data.length - offset; i ++){
             if(this.data[i] != 0x0d || this.data[i + 1] != 0x0a){
                 int temp = this.data[i] & 0xff;
-                if(temp >= 40 && temp < 177){
+                if(temp > 32 && temp < 127){
                     result += Character.toString((char)temp);
                 }else {
                     result += ".";
